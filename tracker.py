@@ -85,28 +85,29 @@ def add_product(request_content):
     details = get_product_details(request_content['url'])
     return add_product_detail(details)
 
+# monitor and update the prices
 def track():
     query = client.query(kind='Product')
     products = list(query.fetch())
-    for p in products:
-        url = p['details']['url']
-        print(url)
-        result = ""
-        if url is None:
-            result = "not updated"
-        else:
-            updated_details = get_product_details(url)
-            p.update({
-                'details': updated_details,
-                'time': datetime.datetime.now()
-            })
-            try:
-                client.put(p)
-                result = "updated"
-            except Exception as identifier:
-                print(identifier)
-                result = "not updated"
-    return result
+    while True:
+        for p in products:
+            url = p['details']['url']
+            #print(url)
+            if url is None:
+                print("not updated")
+            else:
+                updated_details = get_product_details(url)
+                p.update({
+                    'details': updated_details,
+                    'time': datetime.datetime.now()
+                })
+                try:
+                    client.put(p)
+                    print("updated")
+                except Exception as identifier:
+                    print(identifier)
+                    print("not updated")
+        time.sleep(600)
 
 def get_products(request):
     query = client.query(kind = 'Product')
@@ -144,9 +145,7 @@ def manage_products():
         new_product["id"] = product_id
         new_product["self"] = request.base_url + '/' + product_id
         return Response(json.dumps(new_product), status=201, mimetype='application/json')
-        #while True:
-         #   print(track())
-          #  time.sleep(60)
+
     #view user's products
     elif request.method == 'GET':
         product_list = get_all_products(request)#, owner_id)
